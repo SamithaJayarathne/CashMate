@@ -1,23 +1,63 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { use } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView } from "react-native";
+import React, { use, useEffect } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RootParamList } from "../../App";
+import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type RootNavigationProps = NativeStackNavigationProp<RootParamList, 'Root'>;
 
+type Account = {
+    id: number;
+    user_name: string;
+    first_name: string;
+    last_name: string;
+    password: string;
+    created_at: Date;
+    img_path:string
+};
+
 export default function RootScreen() {
+
+    const PUBLIC_URL = "https://485dc755617b.ngrok-free.app";
 
     const navigation = useNavigation<RootNavigationProps>();
 
-    const [getAccounts, setAccounts] = React.useState([
-        { id: 1, name: "Samitha" },
-        { id: 2, name: "Kasun" },
-        { id: 3, name: "Nimal" },
-        { id: 4, name: "Kamal" },
+    async function hanleSelectedUserAccount(Account: Account) {
 
-    ]);
+        await AsyncStorage.setItem("selected_account", JSON.stringify(Account));
+
+        navigation.navigate('Home');
+        console.log("Selected Account: " + Account.user_name);
+        console.log("Selected Account Id: " + Account.id);
+
+    }
+
+    const [getAccounts, setAccounts] = React.useState<Account[]>([]);
+
+    useEffect(() => {
+
+        const loadAccounts = async () => {
+
+            const response = await fetch(PUBLIC_URL + "/CashMate_API/UserController");
+
+            if (response.ok) {
+                const responseJson = await response.json();
+                console.log(responseJson);
+                setAccounts(responseJson.userList);
+            } else {
+                Toast.show({
+                    type: ALERT_TYPE.DANGER,
+                    title: "Network Error",
+                    textBody: "Please check your internet connection and try again.",
+                });
+            }
+        };
+        loadAccounts();
+
+    }, []);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -34,19 +74,20 @@ export default function RootScreen() {
                     <Text style={styles.brandingTitle}>CashMate</Text>
                     <Text style={styles.brandingText}>Your friendly money tracker</Text>
 
-                </View>
-
-
-                <View style={styles.accountSelection}>
-                    <Text style={styles.accountSelectionTitle}>Select an Account</Text>
-
                     <FlatList
                         data={getAccounts}
                         keyExtractor={(account) => account.id.toString()}
                         contentContainerStyle={styles.accountsContainer}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity style={styles.accountCard} activeOpacity={0.7}>
-                                <Text style={styles.accountName}>{item.name}</Text>
+                        renderItem={({ item }: { item: Account }) => (
+                            <TouchableOpacity
+                                style={styles.accountCard}
+                                activeOpacity={0.7}
+                                onPress={() => {
+
+                                    hanleSelectedUserAccount(item);
+                                }}
+                            >
+                                <Text style={styles.accountName}>{item.user_name}</Text>
                             </TouchableOpacity>
                         )}
                     />
@@ -89,6 +130,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#4B5563",
         marginTop: 6,
+        marginBottom:20
     },
     accountSelection: {
         flex: 1,
