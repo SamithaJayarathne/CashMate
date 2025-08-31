@@ -20,7 +20,7 @@ type CreateAccNavigationProps = NativeStackNavigationProp<
 >;
 
 export function Create_AccountScreen() {
-  const PUBLIC_URL = "https://485dc755617b.ngrok-free.app";
+  const PUBLIC_URL = "https://1d929bd5796d.ngrok-free.app";
 
   const navigation = useNavigation<CreateAccNavigationProps>();
 

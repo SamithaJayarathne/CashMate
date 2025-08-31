@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,7 +21,7 @@ export function HomeScreen() {
 
     const navigation = useNavigation<HomeNavigationProps>();
 
-    const PUBLIC_URL = "https://485dc755617b.ngrok-free.app";
+    const PUBLIC_URL = "https://1d929bd5796d.ngrok-free.app";
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [getUserAccount, setUserAccount] = useState<any>(null);
 
@@ -101,9 +101,20 @@ export function HomeScreen() {
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
 
-                <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 18, marginBottom: 10 }}>Hello, {getUserAccount?.user_name}</Text>
+                <View style={styles.topHeaderBox}>
+                    <Pressable
+                        onPress={() => navigation.navigate('Profile')}
+                        style={({ pressed }) => [
+                            styles.topHeaderText,
+                            pressed && { opacity: 0.7 }
+                        ]}
+                    >
+                        <Text style={styles.greetingText}>👋 Hello, {getUserAccount?.user_name}</Text>
+                    </Pressable>
+                    <Text style={styles.subText}>Welcome back to your dashboard!</Text>
                 </View>
+
+
 
                 <View style={styles.headerBox}>
 
@@ -148,6 +159,31 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
+    topHeaderBox: {
+        backgroundColor: '#3B82F6', 
+        padding: 20,
+        borderRadius: 12,
+        marginVertical: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+        alignItems:'center'
+    },
+    topHeaderText: {
+        marginBottom: 5,
+        cursor:'pointer'
+    },
+    greetingText: {
+        fontSize: 20,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+    subText: {
+        fontSize: 14,
+        color: '#E0F2FE',
+    },
     headerBox: {
         padding: 16,
         backgroundColor: "#f7eee9",
@@ -162,12 +198,12 @@ const styles = StyleSheet.create({
     headerLabel: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#1e293b", 
+        color: "#1e293b",
     },
     headerValue: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#0f172a", 
+        color: "#0f172a",
     },
     transactionCard: {
         flexDirection: "row",
@@ -180,6 +216,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
+        marginVertical: 5
     },
     income: {
         backgroundColor: "#D1FAE5",

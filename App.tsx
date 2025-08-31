@@ -7,6 +7,7 @@ import { Create_AccountScreen } from './src/screens/Create_Account';
 import { AlertNotificationRoot } from 'react-native-alert-notification';
 import { HomeScreen } from './src/screens/Home';
 import { TransactionScreen } from './src/screens/Transaction';
+import { ProfileScreen } from './src/screens/Profile';
 
 
 
@@ -15,7 +16,8 @@ export type RootParamList = {
   Root: undefined;
   Create_Account: undefined;
   Home: undefined;
-  Transaction:undefined
+  Transaction:undefined;
+  Profile:undefined
 
 }
 
@@ -31,6 +33,7 @@ export default function App() {
           <Stack.Screen name="Create_Account" component={Create_AccountScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Transaction" component={TransactionScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </AlertNotificationRoot>
