@@ -12,7 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
-import { RootParamList } from "../../App";
+import { PUBLIC_URL, RootParamList } from "../../App";
 
 type CreateAccNavigationProps = NativeStackNavigationProp<
   RootParamList,
@@ -20,7 +20,6 @@ type CreateAccNavigationProps = NativeStackNavigationProp<
 >;
 
 export function Create_AccountScreen() {
-  const PUBLIC_URL = "https://1d929bd5796d.ngrok-free.app";
 
   const navigation = useNavigation<CreateAccNavigationProps>();
 
@@ -76,6 +75,7 @@ export function Create_AccountScreen() {
           textBody: `HTTP ${response.status} - please try again later.`,
         });
       }
+
     } catch (error) {
       console.error(error);
       Toast.show({

@@ -4,8 +4,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootParamList } from "../../App";
-import { useNavigation } from "@react-navigation/native";
+import { PUBLIC_URL, RootParamList } from "../../App";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 
 interface Transaction {
     id: number;
@@ -20,12 +20,11 @@ type HomeNavigationProps = NativeStackNavigationProp<RootParamList, 'Home'>;
 export function HomeScreen() {
 
     const navigation = useNavigation<HomeNavigationProps>();
+    const isFocused = useIsFocused();
 
-    const PUBLIC_URL = "https://1d929bd5796d.ngrok-free.app";
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [getUserAccount, setUserAccount] = useState<any>(null);
 
-    // Load user account from AsyncStorage
     useEffect(() => {
         const loadUserAccount = async () => {
             const stored = await AsyncStorage.getItem("selected_account");
@@ -34,29 +33,30 @@ export function HomeScreen() {
         loadUserAccount();
     }, []);
 
-    useEffect(() => {
-        if (!getUserAccount) return;
+    const loadTransactions = async () => {
+        try {
+            const response = await fetch(`${PUBLIC_URL}/CashMate_API/TransactionController?userId=${getUserAccount.id}`);
+            console.log("Fetching transactions for user ID: " + getUserAccount.id);
 
-        const loadTransactions = async () => {
-            try {
-                const response = await fetch(`${PUBLIC_URL}/CashMate_API/TransactionController?userId=${getUserAccount.id}`);
-                console.log("Fetching transactions for user ID: " + getUserAccount.id);
-
-                if (response.ok) {
-                    const responseJson = await response.json();
-                    if (responseJson.status && responseJson.transactionList) {
-                        setTransactions(responseJson.transactionList);
-                    }
-                } else {
-                    console.warn("Failed to fetch transactions");
+            if (response.ok) {
+                const responseJson = await response.json();
+                if (responseJson.status && responseJson.transactionList) {
+                    setTransactions(responseJson.transactionList);
                 }
-            } catch (error) {
-                console.error("Error fetching transactions:", error);
+            } else {
+                console.warn("Failed to fetch transactions");
             }
-        };
+        } catch (error) {
+            console.error("Error fetching transactions:", error);
+        }
+    };
 
-        loadTransactions();
-    }, [getUserAccount]);
+    useEffect(() => {
+        if (getUserAccount && isFocused) {
+            loadTransactions();
+        }
+    }, [getUserAccount, isFocused]);
+
 
     const formatNumber = (num: number) => {
         return new Intl.NumberFormat("en-LK", {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     topHeaderBox: {
-        backgroundColor: '#3B82F6', 
+        backgroundColor: '#3B82F6',
         padding: 20,
         borderRadius: 12,
         marginVertical: 15,
@@ -169,11 +169,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 4,
         elevation: 5,
-        alignItems:'center'
+        alignItems: 'center'
     },
     topHeaderText: {
         marginBottom: 5,
-        cursor:'pointer'
+        cursor: 'pointer'
     },
     greetingText: {
         fontSize: 20,

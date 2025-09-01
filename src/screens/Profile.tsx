@@ -1,46 +1,192 @@
-import React, { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as ImagePicker from "expo-image-picker";
+import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { PUBLIC_URL } from "../../App";
+import { useIsFocused } from "@react-navigation/native";
 
 export function ProfileScreen() {
-    const [profileImage, setProfileImage] = useState(
-        "https://via.placeholder.com/100" // default placeholder image
-    );
 
-    const handleSaveImage = () => {
-        // Add your image saving logic here (e.g., upload to server)
-        alert("Profile image saved!");
+    const [getUserAccount, setUserAccount] = useState<any>(null);
+    const [getIncome, setIncome] = useState<number>(0);
+    const [getExpense, setExpense] = useState<number>(0);
+    const [getBalance, setBalance] = useState<number>(0);
+    const [getCount, setCount] = useState<number>(0);
+    const [getProfileImg, setProfileImg] = useState<string>("");
+
+    const isFocused = useIsFocused();
+
+    const imageUrl = getUserAccount?.img_path
+        ? `${PUBLIC_URL}/profile_image/${getUserAccount.img_path}`
+        : null;
+
+
+    const formatNumber = (num: number) => {
+        return new Intl.NumberFormat("en-LK", {
+            style: "currency",
+            currency: "LKR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(num);
     };
+
+    const setImage = async () => {
+        let img = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        if (!img.canceled) {
+            setProfileImg(img.assets[0].uri);
+        }
+    };
+
+    const saveImage = async () => {
+        if (!getProfileImg) return;
+
+        let formData = new FormData();
+        formData.append("userId", String(getUserAccount?.id));
+        formData.append(
+            "profileImg",
+            {
+                uri: getProfileImg,
+                type: "image/jpeg",
+                name: "profileImage.jpg",
+            } as any
+        );
+
+        try {
+            const response = await fetch(PUBLIC_URL + "/CashMate_API/ProfileController", {
+                method: "POST",
+                body: formData,
+                headers: {}, // let RN set correct headers with boundary
+            });
+
+
+
+            if (response.ok) {
+                const responseJson = await response.json();
+
+                if (responseJson.status) {
+                    Toast.show({
+                        type: ALERT_TYPE.SUCCESS,
+                        title: "Success",
+                        textBody: "Image saved successfully",
+                    });
+
+                    setUserAccount(responseJson.user);
+                    AsyncStorage.setItem("selected_account", JSON.stringify(responseJson.user));
+
+                } else {
+                    Toast.show({
+                        type: ALERT_TYPE.DANGER,
+                        title: "Upload Error",
+                        textBody: responseJson.message,
+                    });
+                }
+
+
+            } else {
+                Toast.show({
+                    type: ALERT_TYPE.DANGER,
+                    title: "Upload Error",
+                    textBody: "Something went wrong",
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            Toast.show({
+                type: ALERT_TYPE.DANGER,
+                title: "Network Error",
+                textBody: "Please check your internet connection and try again.",
+            });
+        }
+    };
+
+    const loadProfileDetails = async () => {
+        const stored = await AsyncStorage.getItem("selected_account");
+
+        if (stored) {
+            const account = JSON.parse(stored);
+            setUserAccount(account);
+            loadTransactionDetails(account.id);
+        }
+    };
+
+    const loadTransactionDetails = async (id: number) => {
+        const response = await fetch(
+            PUBLIC_URL + "/CashMate_API/ProfileController?userId=" + id
+        );
+
+        if (response.ok) {
+            const responseJson = await response.json();
+
+            if (responseJson.status) {
+                const data = responseJson.account_summary;
+
+                setIncome(data.total_income);
+                setExpense(data.total_expense);
+                setBalance(data.balance);
+                setCount(data.transaction_count);
+            } else {
+                console.warn(responseJson.message);
+            }
+        } else {
+            console.error("Failed to fetch data");
+        }
+    };
+
+
+    useEffect(() => {
+
+        if (isFocused) {
+            loadProfileDetails();
+        }
+        
+    }, [isFocused]);
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.container}>
                 {/* Profile Image */}
                 <View style={styles.profileImageContainer}>
-                    <Image source={require("../img/user2.png")} style={styles.profileImage} />
-                    <Pressable style={styles.saveButton} onPress={handleSaveImage}>
-                        <Text style={styles.saveButtonText}>Save Profile Image</Text>
+                    <Pressable onPress={setImage} style={styles.imageUploader}>
+                        {imageUrl ? (
+                            <Image source={{ uri: imageUrl }} style={styles.profileImage} />
+                        ) : (
+                            <View style={styles.imageContainer}>
+                                <Text style={styles.imageText}>+</Text>
+                                <Text style={styles.imageLabel}>Add Image</Text>
+                            </View>
+                        )}
+                    </Pressable>
+                    <Pressable style={styles.saveButton} onPress={saveImage}>
+                        <Text style={styles.saveButtonText}>Save profile image</Text>
                     </Pressable>
                 </View>
 
-                {/* Profile Information */}
+                {/* Profile Info */}
                 <View style={styles.card}>
                     <Text style={styles.heading}>Profile Information</Text>
                     <View style={styles.row}>
                         <Text style={styles.label}>First Name:</Text>
-                        <Text style={styles.value}>Samitha</Text>
+                        <Text style={styles.value}>{getUserAccount?.first_name}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.label}>Last Name:</Text>
-                        <Text style={styles.value}>Jayarathne</Text>
+                        <Text style={styles.value}>{getUserAccount?.last_name}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.label}>User Name:</Text>
-                        <Text style={styles.value}>samitha123</Text>
+                        <Text style={styles.value}>{getUserAccount?.user_name}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.label}>Password:</Text>
-                        <Text style={styles.value}>********</Text>
+                        <Text style={styles.value}>{getUserAccount?.password}</Text>
                     </View>
                 </View>
 
@@ -49,23 +195,23 @@ export function ProfileScreen() {
                     <Text style={styles.heading}>Account Summary</Text>
                     <View style={styles.row}>
                         <Text style={styles.label}>Total Expenses:</Text>
-                        <Text style={styles.value}>$1,200</Text>
+                        <Text style={styles.expenseValue}>{formatNumber(getExpense)}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.label}>Total Income:</Text>
-                        <Text style={styles.value}>$3,500</Text>
+                        <Text style={styles.incomeValue}>{formatNumber(getIncome)}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.label}>Balance:</Text>
-                        <Text style={styles.value}>$2,300</Text>
+                        <Text style={styles.value}>{formatNumber(getBalance)}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.label}>Total Transactions:</Text>
-                        <Text style={styles.value}>45</Text>
+                        <Text style={styles.value}>{getCount}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text style={styles.label}>Account Created:</Text>
-                        <Text style={styles.value}>2024-08-15</Text>
+                        <Text style={styles.value}>{getUserAccount?.created_at}</Text>
                     </View>
                 </View>
             </ScrollView>
@@ -85,29 +231,28 @@ const styles = StyleSheet.create({
     profileImageContainer: {
         alignItems: "center",
         marginBottom: 20,
-        borderRadius: 50,
-        borderColor: "#F59E0B"
     },
     profileImage: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        borderWidth: 2,        
+        borderWidth: 2,
         borderColor: "#F59E0B",
-        marginBottom:20
+        marginBottom: 20,
     },
     saveButton: {
         backgroundColor: "#3B82F6",
         paddingHorizontal: 15,
         paddingVertical: 8,
         borderRadius: 8,
+        marginTop: 10,
     },
     saveButtonText: {
         color: "#FFFFFF",
         fontWeight: "600",
     },
     card: {
-        backgroundColor: "#f7eee9",
+        backgroundColor: "#fcefde",
         padding: 20,
         borderRadius: 12,
         marginVertical: 20,
@@ -136,5 +281,37 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "500",
         color: "#111827",
+    },
+    expenseValue: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: "#eb4034",
+    },
+    incomeValue: {
+        fontSize: 18,
+        fontWeight: "600",
+        color: "#0eab0e",
+    },
+    imageUploader: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: "#f0f0f0",
+        justifyContent: "center",
+        alignItems: "center",
+        borderWidth: 2,
+        borderColor: "#3f3e3e",
+    },
+    imageContainer: {
+        alignItems: "center",
+    },
+    imageText: {
+        fontSize: 36,
+        color: "#999999",
+        marginBottom: 5,
+    },
+    imageLabel: {
+        fontSize: 14,
+        color: "#555",
     },
 });

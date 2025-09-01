@@ -3,9 +3,10 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { use, useEffect } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RootParamList } from "../../App";
+import { PUBLIC_URL, RootParamList } from "../../App";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useIsFocused } from "@react-navigation/native";
 
 type RootNavigationProps = NativeStackNavigationProp<RootParamList, 'Root'>;
 
@@ -16,14 +17,14 @@ type Account = {
     last_name: string;
     password: string;
     created_at: Date;
-    img_path:string
+    img_path: string
 };
+
 
 export default function RootScreen() {
 
-    const PUBLIC_URL = "https://1d929bd5796d.ngrok-free.app";
-
     const navigation = useNavigation<RootNavigationProps>();
+    const isFocused = useIsFocused();
 
     async function hanleSelectedUserAccount(Account: Account) {
 
@@ -37,27 +38,28 @@ export default function RootScreen() {
 
     const [getAccounts, setAccounts] = React.useState<Account[]>([]);
 
-    useEffect(() => {
+    const loadAccounts = async () => {
 
-        const loadAccounts = async () => {
+        const response = await fetch(PUBLIC_URL + "/CashMate_API/UserController");
 
-            const response = await fetch(PUBLIC_URL + "/CashMate_API/UserController");
+        if (response.ok) {
+            const responseJson = await response.json();
+            console.log(responseJson);
+            setAccounts(responseJson.userList);
+        } else {
+            Toast.show({
+                type: ALERT_TYPE.DANGER,
+                title: "Network Error",
+                textBody: "Please check your internet connection and try again.",
+            });
+        }
+    };
 
-            if (response.ok) {
-                const responseJson = await response.json();
-                console.log(responseJson);
-                setAccounts(responseJson.userList);
-            } else {
-                Toast.show({
-                    type: ALERT_TYPE.DANGER,
-                    title: "Network Error",
-                    textBody: "Please check your internet connection and try again.",
-                });
-            }
-        };
-        loadAccounts();
-
-    }, []);
+    React.useEffect(() => {
+        if (isFocused) {
+            loadAccounts(); 
+        }
+    }, [isFocused]);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#4B5563",
         marginTop: 6,
-        marginBottom:20
+        marginBottom: 20
     },
     accountSelection: {
         flex: 1,

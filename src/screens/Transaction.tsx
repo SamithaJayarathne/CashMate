@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 import { ALERT_TYPE, Toast } from "react-native-alert-notification";
+import { PUBLIC_URL } from "../../App";
 
 export function TransactionScreen() {
     const [getAmount, setAmount] = useState("");
@@ -20,7 +21,6 @@ export function TransactionScreen() {
     const [getType, setType] = useState<string>('');
     const [getCategory, setCategory] = useState<number>(); // category id
     const [getCategories, setCategories] = useState<{ id: number; name: string }[]>([]);
-    const PUBLIC_URL = "https://1d929bd5796d.ngrok-free.app";
 
     const [getUserAccount, setUserAccount] = useState<any>(null);
 

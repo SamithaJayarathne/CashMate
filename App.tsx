@@ -1,7 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
 import RootScreen from './src/screens/Root';
 import { Create_AccountScreen } from './src/screens/Create_Account';
 import { AlertNotificationRoot } from 'react-native-alert-notification';
@@ -10,8 +9,18 @@ import { TransactionScreen } from './src/screens/Transaction';
 import { ProfileScreen } from './src/screens/Profile';
 
 
+export const PUBLIC_URL = "https://99bac6a36821.ngrok-free.app";
 
 export type RootParamList = {
+
+  Root: undefined;
+  Create_Account: undefined;
+  Home: undefined;
+  Transaction:undefined;
+  Profile:undefined
+
+}
+export type TabParamList = {
 
   Root: undefined;
   Create_Account: undefined;
@@ -40,4 +49,6 @@ export default function App() {
 
   );
 }
+
+
 
